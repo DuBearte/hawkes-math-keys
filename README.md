@@ -31,18 +31,17 @@ Hold **Alt** while pressing `/` to get Hawkes's original behaviour at any time.
 
 ### Typed shortcuts instead of keypad clicks
 
-Type these in an answer box and they turn into the Hawkes symbol or function as soon as you finish the word, the same names Desmos and most calculators use:
+Type the name and it turns into the Hawkes symbol or function as soon as you finish the word, using the same names as Desmos and most calculators. In Hawkes you'd have to find and click each one on the keypad.
 
-| Type | Get | Hawkes's way |
-|---|---|---|
-| `sqrt` | √ (square root) | click √ on the keypad |
-| `pi` | π | click π on the keypad |
-| `inf` | ∞ | click ∞ on the keypad |
-| `<=` / `>=` | ≤ / ≥ | click ≤ / ≥ on the keypad |
-| `sin` `cos` `tan` `csc` `sec` `cot` | trig functions | click the function on the keypad |
-| `ln` `log` | natural log, log | click ln / log on the keypad |
-| `arcsin` `arccos` `arctan` `arccsc` `arcsec` `arccot` | sin⁻¹, cos⁻¹, … with the cursor inside | click the function-with-exponent button, type -1, then click the argument |
-| `theta` | θ | click θ on the keypad |
+| Type | Get |
+|---|---|
+| `sqrt` `pi` `inf` | √ π ∞ |
+| `<=` `>=` `!=` | ≤ ≥ ≠ |
+| `alpha` `beta` `theta` `lambda` `mu` `omega` | α β θ λ μ ω |
+| `sin` `cos` `tan` `csc` `sec` `cot` `ln` `log` | functions |
+| `arcsin` `arccos` `arctan` `arccsc` `arcsec` `arccot` | sin⁻¹ cos⁻¹ … |
+
+**[Full shortcut guide →](SHORTCUTS.md)**, including how to type plain letters like `m` `u` without getting μ.
 
 ## Install (Brave or Chrome)
 

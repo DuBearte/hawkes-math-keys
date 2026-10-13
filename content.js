@@ -10,10 +10,11 @@
 // Hold Alt while pressing "/" to get Hawkes's original behaviour.
 //
 // It also turns typed shortcuts into Hawkes keypad buttons: "sqrt" -> √,
-// "pi" -> π, "inf" -> ∞, "<=" -> ≤, ">=" -> ≥, and "sin", "cos", "tan", "csc",
-// "sec", "cot", "ln", "log" -> the matching function, "theta" -> θ, and
-// "arcsin" etc. -> sin⁻¹ etc. The shortcut fires on its last letter, removes
-// what you typed, and clicks the keypad button.
+// "pi" -> π, "inf" -> ∞, "<=" -> ≤, ">=" -> ≥, "!=" -> ≠, Greek letter names
+// ("theta" -> θ), "sin", "cos", "tan", "csc", "sec", "cot", "ln", "log" -> the
+// matching function, and "arcsin" etc. -> sin⁻¹ etc. The shortcut fires on
+// its last letter, removes what you typed, and clicks the keypad button.
+// SHORTCUTS.md lists them all.
 (() => {
   "use strict";
 
@@ -43,7 +44,13 @@
     cot: "cot",
     ln: "ln",
     log: "log",
+    "!=": "symNotEqualTo",
+    alpha: "symAlpha",
+    beta: "symBeta",
     theta: "symTheta",
+    lambda: "symLambda",
+    mu: "symMu",
+    omega: "symOmega",
   };
 
   // Inverse trig shortcut -> Hawkes's "function with exponent" button. The
