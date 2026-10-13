@@ -3,7 +3,9 @@
 Every shortcut Hawkes Math Keys adds to Hawkes Learning's math answer boxes.
 
 Shortcuts work inside any answer box, including inside fractions, roots and brackets.
-A shortcut fires the moment you type its last character: the letters you typed disappear and the Hawkes symbol or function appears in their place, exactly as if you had clicked its keypad button.
+A shortcut fires the moment you type its last character, and the Hawkes symbol or function appears exactly as if you had clicked its keypad button.
+While you're partway through a shortcut (say you've typed `co` of `cos`), those letters are held back and don't show in the box yet. This matters because Hawkes refuses letters a problem doesn't use: on a problem in `x`, `y` and `C`, typing a plain `o` gives an error.
+If the letters turn out not to be a shortcut, they're typed as soon as you press a different key, click away, or pause for under a second.
 The Hawkes keypad has to be on the page (it can be minimized) for shortcuts that press its buttons.
 
 ## Fractions

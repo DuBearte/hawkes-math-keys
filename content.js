@@ -12,8 +12,10 @@
 // It also turns typed shortcuts into Hawkes keypad buttons: "sqrt" -> √,
 // "pi" -> π, "inf" -> ∞, "<=" -> ≤, ">=" -> ≥, "!=" -> ≠, Greek letter names
 // ("theta" -> θ), "sin", "cos", "tan", "csc", "sec", "cot", "ln", "log" -> the
-// matching function, and "arcsin" etc. -> sin⁻¹ etc. The shortcut fires on
-// its last letter, removes what you typed, and clicks the keypad button.
+// matching function, and "arcsin" etc. -> sin⁻¹ etc. Letters that could start
+// a shortcut are held back until the shortcut is complete, then the keypad
+// button is clicked; if the letters turn out not to be a shortcut they are
+// typed normally.
 // SHORTCUTS.md lists them all.
 (() => {
   "use strict";
@@ -27,6 +29,7 @@
   // Key codes for the characters we may need to simulate.
   const KEY_CODES = {
     "/": 191, ".": 190, "(": 57, ")": 48, "-": 189,
+    "<": 188, ">": 190, "!": 49, "=": 187,
   };
 
   // Typed shortcut -> id of the Hawkes keypad button it presses.
@@ -234,30 +237,90 @@
     button.dispatchEvent(new MouseEvent("click", opts));
   }
 
-  // If the key being pressed finishes a shortcut, removes the rest of the
-  // shortcut from the box and presses the matching keypad button instead.
-  function handleShortcut(ev, box) {
-    if (ev.key.length !== 1) return;
-    const cursor = box.selectionStart ?? box.value.length;
-    if (cursor !== (box.selectionEnd ?? cursor)) return;
-    const typed = box.value.slice(0, cursor) + ev.key;
-    const word = SHORTCUT_WORDS.find((w) => typed.endsWith(w));
-    if (!word) return;
+  // Letters that might be the start of a shortcut are held back here instead
+  // of being typed, because Hawkes rejects letters a problem doesn't use (on a
+  // problem in x, y and C, typing the "o" of "cos" shows an error). If the
+  // next key doesn't continue a shortcut, the held letters are typed for real.
+  let pending = "";
+  let pendingBox = null;
+  let pendingTimer = 0;
+  const PENDING_IDLE_MS = 800;
 
+  const startsShortcut = (text) => SHORTCUT_WORDS.some((w) => w.startsWith(text));
+
+  function insertText(box, text) {
+    if (document.activeElement === box) {
+      typeText(box, text);
+    } else {
+      // Focus has moved on; don't steal it back, just put the text in place.
+      const at = box.selectionStart ?? box.value.length;
+      setValue(box, box.value.slice(0, at) + text + box.value.slice(at), at + text.length);
+    }
+  }
+
+  // Types any held-back letters into the box they were meant for.
+  function flushPending() {
+    clearTimeout(pendingTimer);
+    if (!pending) return;
+    const text = pending;
+    const box = pendingBox;
+    pending = "";
+    pendingBox = null;
+    if (!box.isConnected) return;
+    synthesizing = true;
+    try {
+      insertText(box, text);
+    } finally {
+      synthesizing = false;
+    }
+  }
+
+  function fireShortcut(word, box) {
     const buttonId = SHORTCUTS[word] || INVERSE_TRIG[word];
     const button = document.getElementById(buttonId);
     if (!button) {
-      log(`No keypad button "${buttonId}" on this page; leaving "${word}" as typed.`);
+      log(`No keypad button "${buttonId}" on this page; typing "${word}" as letters.`);
+      pending = word;
+      pendingBox = box;
+      flushPending();
       return;
     }
-    ev.preventDefault();
-    ev.stopImmediatePropagation();
-    const start = cursor - (word.length - 1);
     const boxesBefore = new Set(allBoxes());
-    setValue(box, box.value.slice(0, start) + box.value.slice(cursor), start);
     clickButton(button);
     log(`Turned "${word}" into the ${buttonId} button in`, box.id);
     if (INVERSE_TRIG[word]) finishInverse(boxesBefore);
+  }
+
+  // Returns true if the key was taken over as part of a shortcut.
+  function handleShortcut(ev, box) {
+    if (ev.key.length !== 1 || ev.altKey) {
+      flushPending();
+      return false;
+    }
+    if (pendingBox && pendingBox !== box) flushPending();
+
+    let candidate = pending + ev.key;
+    if (!startsShortcut(candidate)) {
+      flushPending();
+      candidate = ev.key;
+      if (!startsShortcut(candidate)) return false;
+    }
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
+    clearTimeout(pendingTimer);
+
+    const complete = SHORTCUT_WORDS.includes(candidate) &&
+      !SHORTCUT_WORDS.some((w) => w !== candidate && w.startsWith(candidate));
+    if (complete) {
+      pending = "";
+      pendingBox = null;
+      fireShortcut(candidate, box);
+      return true;
+    }
+    pending = candidate;
+    pendingBox = box;
+    pendingTimer = setTimeout(flushPending, PENDING_IDLE_MS);
+    return true;
   }
 
   // After a "function with exponent" button, types -1 into the exponent and
@@ -292,9 +355,10 @@
     const box = ev.target;
     if (!isHawkesBox(box)) return;
     if (ev.key !== "/") {
-      if (!ev.altKey) handleShortcut(ev, box);
+      handleShortcut(ev, box);
       return;
     }
+    flushPending();
     if (ev.altKey) return; // Alt+/ keeps Hawkes's original behaviour
 
     const cursor = box.selectionStart ?? box.value.length;
@@ -316,5 +380,8 @@
   }
 
   document.addEventListener("keydown", onKeyDown, true);
+  document.addEventListener("focusout", (ev) => {
+    if (ev.target === pendingBox) flushPending();
+  }, true);
   log("loaded in", location.href);
 })();
