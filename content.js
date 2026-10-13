@@ -241,10 +241,30 @@
   // of being typed, because Hawkes rejects letters a problem doesn't use (on a
   // problem in x, y and C, typing the "o" of "cos" shows an error). If the
   // next key doesn't continue a shortcut, the held letters are typed for real.
+  // There is no timeout: typing a shortcut slowly must not leak its letters.
   let pending = "";
   let pendingBox = null;
-  let pendingTimer = 0;
-  const PENDING_IDLE_MS = 800;
+  let hint = null;
+
+  // Shows the held letters in a small label above the box, since they aren't
+  // in the box itself yet.
+  function showHint(box, text) {
+    if (!hint) {
+      hint = document.createElement("div");
+      hint.style.cssText =
+        "position:fixed;z-index:2147483647;pointer-events:none;padding:1px 6px;" +
+        "border-radius:4px;background:#333;color:#fff;font:13px/1.4 monospace;";
+    }
+    if (!hint.isConnected) document.body.appendChild(hint);
+    const r = box.getBoundingClientRect();
+    hint.textContent = text + "…";
+    hint.style.left = `${r.left}px`;
+    hint.style.top = `${Math.max(0, r.top - 22)}px`;
+  }
+
+  function hideHint() {
+    if (hint) hint.remove();
+  }
 
   const startsShortcut = (text) => SHORTCUT_WORDS.some((w) => w.startsWith(text));
 
@@ -260,7 +280,7 @@
 
   // Types any held-back letters into the box they were meant for.
   function flushPending() {
-    clearTimeout(pendingTimer);
+    hideHint();
     if (!pending) return;
     const text = pending;
     const box = pendingBox;
@@ -307,19 +327,19 @@
     }
     ev.preventDefault();
     ev.stopImmediatePropagation();
-    clearTimeout(pendingTimer);
 
     const complete = SHORTCUT_WORDS.includes(candidate) &&
       !SHORTCUT_WORDS.some((w) => w !== candidate && w.startsWith(candidate));
     if (complete) {
       pending = "";
       pendingBox = null;
+      hideHint();
       fireShortcut(candidate, box);
       return true;
     }
     pending = candidate;
     pendingBox = box;
-    pendingTimer = setTimeout(flushPending, PENDING_IDLE_MS);
+    showHint(box, pending);
     return true;
   }
 

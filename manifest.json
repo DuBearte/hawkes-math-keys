@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Hawkes Math Keys",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "Desmos-style math typing for Hawkes Learning: type 3/4 instead of /34, sqrt, pi, sin, <= and more.",
   "content_scripts": [
     {
