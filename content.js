@@ -19,7 +19,7 @@
 
   // Key codes for the characters we may need to simulate.
   const KEY_CODES = {
-    "/": 191, ".": 190, "(": 57, ")": 48, ArrowDown: 40, ArrowRight: 39,
+    "/": 191, ".": 190, "(": 57, ")": 48,
   };
 
   let synthesizing = false;
@@ -104,11 +104,6 @@
     }
   }
 
-  function pressKey(target, key) {
-    fireKey(target, "keydown", key);
-    fireKey(target, "keyup", key);
-  }
-
   // Waits for Hawkes to move the cursor into a different box.
   async function waitForFocusChange(from, timeoutMs) {
     const start = Date.now();
@@ -120,16 +115,24 @@
     return null;
   }
 
-  // Finds the box drawn directly below `box` (the denominator of a fraction).
-  function boxBelow(box) {
-    const r = box.getBoundingClientRect();
+  // Finds the denominator of the fraction whose numerator is `numerator`.
+  // Only boxes that did not exist before the "/" are considered, so an older
+  // fraction's denominator can never be picked. Hawkes numbers a fraction's
+  // boxes so the denominator is the numerator's number + 2 (QBase27 over
+  // QBase29); if that doesn't hold, take the new box drawn just below.
+  function findDenominator(numerator, boxesBefore) {
+    const fresh = allBoxes().filter((b) => b !== numerator && !boxesBefore.has(b));
+    const n = Number((numerator.id.match(/^QBase(\d+)_input$/) || [])[1]);
+    const byId = fresh.find((b) => b.id === `QBase${n + 2}_input`);
+    const r = numerator.getBoundingClientRect();
+    if (byId && byId.getBoundingClientRect().top > r.top) return byId;
+
     let best = null;
     let bestGap = Infinity;
-    for (const other of allBoxes()) {
-      if (other === box) continue;
+    for (const other of fresh) {
       const o = other.getBoundingClientRect();
       const gap = o.top - r.bottom;
-      const overlaps = o.left < r.right + 20 && o.right > r.left - 20;
+      const overlaps = o.left < r.right && o.right > r.left;
       if (gap > -4 && overlaps && gap < bestGap) {
         best = other;
         bestGap = gap;
@@ -150,7 +153,7 @@
     box.dispatchEvent(new MouseEvent("click", opts));
   }
 
-  async function finishFraction(origin, term, originalValue, termStart) {
+  async function finishFraction(origin, term, originalValue, termStart, boxesBefore) {
     const numerator = await waitForFocusChange(origin, 500);
     if (!numerator) {
       log("Hawkes did not move the cursor after '/'; putting the term back.");
@@ -164,15 +167,9 @@
       typeText(numerator, term);
       await sleep(30);
 
-      // Try Hawkes's own key for moving down first, then fall back to
-      // clicking the box drawn underneath the numerator.
-      pressKey(document.activeElement || numerator, "ArrowDown");
-      const viaKey = await waitForFocusChange(document.activeElement, 120);
-      if (viaKey) {
-        log("Moved to denominator with the Down arrow:", viaKey.id);
-        return;
-      }
-      const below = boxBelow(numerator);
+      // Hawkes ignores script-generated arrow keys, so click into the
+      // denominator instead.
+      const below = findDenominator(numerator, boxesBefore);
       if (below) {
         clickInto(below);
         log("Moved to denominator by clicking:", below.id);
@@ -203,8 +200,9 @@
     log(`Turning "${term}/" into a fraction in`, box.id);
     // Remove the term, then let the real "/" key reach Hawkes so it builds
     // the fraction at the spot where the term was.
+    const boxesBefore = new Set(allBoxes());
     setValue(box, value.slice(0, termStart) + value.slice(cursor), termStart);
-    finishFraction(box, term, value, termStart);
+    finishFraction(box, term, value, termStart, boxesBefore);
   }
 
   document.addEventListener("keydown", onKeyDown, true);
