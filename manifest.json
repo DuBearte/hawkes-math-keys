@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Hawkes Math Keys",
+  "version": "0.1.0",
+  "description": "Desmos-style math typing for Hawkes Learning: type 3/4 instead of /34.",
+  "content_scripts": [
+    {
+      "matches": ["*://*.hawkeslearning.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_start",
+      "all_frames": true,
+      "match_about_blank": true,
+      "world": "MAIN"
+    }
+  ]
+}
