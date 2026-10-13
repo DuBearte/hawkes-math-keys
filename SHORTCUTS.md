@@ -7,6 +7,7 @@ A shortcut fires the moment you type its last character, and the Hawkes symbol o
 While you're partway through a shortcut (say you've typed `co` of `cos`), those letters are held back and don't show in the box yet. This matters because Hawkes refuses letters a problem doesn't use: on a problem in `x`, `y` and `C`, typing a plain `o` gives an error.
 A small dark label above the box shows the held letters (for example `sq…`), and you can take as long as you like to finish the word.
 If the letters turn out not to be a shortcut, they're typed as soon as you press a key that doesn't continue one (a space, `+`, an arrow key, Backspace…) or click away.
+Tip: if you want a held letter on its own (like a variable `s`), press the **Right** arrow to drop it into the box.
 The Hawkes keypad has to be on the page (it can be minimized) for shortcuts that press its buttons.
 
 ## Fractions
