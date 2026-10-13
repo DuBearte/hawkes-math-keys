@@ -8,6 +8,11 @@
 // cursor to the bottom box.
 //
 // Hold Alt while pressing "/" to get Hawkes's original behaviour.
+//
+// It also turns typed shortcuts into Hawkes keypad buttons: "sqrt" -> √,
+// "pi" -> π, "inf" -> ∞, "<=" -> ≤, ">=" -> ≥, and "sin", "cos", "tan", "csc",
+// "sec", "cot", "ln", "log" -> the matching function. The shortcut fires on
+// its last letter, removes what you typed, and clicks the keypad button.
 (() => {
   "use strict";
 
@@ -20,6 +25,23 @@
   // Key codes for the characters we may need to simulate.
   const KEY_CODES = {
     "/": 191, ".": 190, "(": 57, ")": 48,
+  };
+
+  // Typed shortcut -> id of the Hawkes keypad button it presses.
+  const SHORTCUTS = {
+    sqrt: "Radical",
+    pi: "symPi",
+    inf: "symInfinite",
+    "<=": "symLessThanOrEqualTo",
+    ">=": "symGreaterThanOrEqualTo",
+    sin: "sin",
+    cos: "cos",
+    tan: "tan",
+    csc: "csc",
+    sec: "sec",
+    cot: "cot",
+    ln: "ln",
+    log: "log",
   };
 
   let synthesizing = false;
@@ -181,11 +203,45 @@
     }
   }
 
+  function clickButton(button) {
+    const opts = { bubbles: true, cancelable: true, view: window, button: 0 };
+    button.dispatchEvent(new MouseEvent("mousedown", opts));
+    button.dispatchEvent(new MouseEvent("mouseup", opts));
+    button.dispatchEvent(new MouseEvent("click", opts));
+  }
+
+  // If the key being pressed finishes a shortcut, removes the rest of the
+  // shortcut from the box and presses the matching keypad button instead.
+  function handleShortcut(ev, box) {
+    if (ev.key.length !== 1) return;
+    const cursor = box.selectionStart ?? box.value.length;
+    if (cursor !== (box.selectionEnd ?? cursor)) return;
+    const typed = box.value.slice(0, cursor) + ev.key;
+    const word = Object.keys(SHORTCUTS).find((w) => typed.endsWith(w));
+    if (!word) return;
+
+    const button = document.getElementById(SHORTCUTS[word]);
+    if (!button) {
+      log(`No keypad button "${SHORTCUTS[word]}" on this page; leaving "${word}" as typed.`);
+      return;
+    }
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
+    const start = cursor - (word.length - 1);
+    setValue(box, box.value.slice(0, start) + box.value.slice(cursor), start);
+    clickButton(button);
+    log(`Turned "${word}" into the ${SHORTCUTS[word]} button in`, box.id);
+  }
+
   function onKeyDown(ev) {
-    if (synthesizing || ev.key !== "/" || ev.ctrlKey || ev.metaKey) return;
-    if (ev.altKey) return; // Alt+/ keeps Hawkes's original behaviour
+    if (synthesizing || ev.ctrlKey || ev.metaKey) return;
     const box = ev.target;
     if (!isHawkesBox(box)) return;
+    if (ev.key !== "/") {
+      if (!ev.altKey) handleShortcut(ev, box);
+      return;
+    }
+    if (ev.altKey) return; // Alt+/ keeps Hawkes's original behaviour
 
     const cursor = box.selectionStart ?? box.value.length;
     if (cursor !== (box.selectionEnd ?? cursor)) return; // text is selected

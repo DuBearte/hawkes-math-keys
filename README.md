@@ -17,6 +17,19 @@ The term before `/` stops at `+ - = < > , *` or a space, the same way Desmos dec
 If nothing is before the cursor, `/` works the way Hawkes normally does.
 Hold **Alt** while pressing `/` to get the original Hawkes behaviour.
 
+### Typed shortcuts
+
+Type these anywhere in an answer box and they turn into the matching Hawkes keypad button as soon as you finish the word:
+
+| Type | Get |
+|---|---|
+| `sqrt` | √ (square root) |
+| `pi` | π |
+| `inf` | ∞ |
+| `<=` / `>=` | ≤ / ≥ |
+| `sin` `cos` `tan` `csc` `sec` `cot` | trig functions |
+| `ln` `log` | logarithms |
+
 ## Install (Brave or Chrome)
 
 1. Download this repo: green **Code** button → **Download ZIP**, then unzip it.
