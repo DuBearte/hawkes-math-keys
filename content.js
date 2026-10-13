@@ -379,8 +379,11 @@
     finishFraction(box, term, value, termStart, boxesBefore);
   }
 
-  document.addEventListener("keydown", onKeyDown, true);
-  document.addEventListener("focusout", (ev) => {
+  // Listen on window in the capture phase: it sees keys before any listener
+  // Hawkes adds to the document or the boxes, and because this script runs at
+  // document_start it is registered ahead of Hawkes's own window listeners.
+  window.addEventListener("keydown", onKeyDown, true);
+  window.addEventListener("focusout", (ev) => {
     if (ev.target === pendingBox) flushPending();
   }, true);
   log("loaded in", location.href);
