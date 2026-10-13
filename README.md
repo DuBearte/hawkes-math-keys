@@ -41,6 +41,8 @@ Type these in an answer box and they turn into the Hawkes symbol or function as 
 | `<=` / `>=` | ≤ / ≥ | click ≤ / ≥ on the keypad |
 | `sin` `cos` `tan` `csc` `sec` `cot` | trig functions | click the function on the keypad |
 | `ln` `log` | natural log, log | click ln / log on the keypad |
+| `arcsin` `arccos` `arctan` `arccsc` `arcsec` `arccot` | sin⁻¹, cos⁻¹, … with the cursor inside | click the function-with-exponent button, type -1, then click the argument |
+| `theta` | θ | click θ on the keypad |
 
 ## Install (Brave or Chrome)
 

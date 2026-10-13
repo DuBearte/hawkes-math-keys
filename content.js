@@ -11,8 +11,9 @@
 //
 // It also turns typed shortcuts into Hawkes keypad buttons: "sqrt" -> √,
 // "pi" -> π, "inf" -> ∞, "<=" -> ≤, ">=" -> ≥, and "sin", "cos", "tan", "csc",
-// "sec", "cot", "ln", "log" -> the matching function. The shortcut fires on
-// its last letter, removes what you typed, and clicks the keypad button.
+// "sec", "cot", "ln", "log" -> the matching function, "theta" -> θ, and
+// "arcsin" etc. -> sin⁻¹ etc. The shortcut fires on its last letter, removes
+// what you typed, and clicks the keypad button.
 (() => {
   "use strict";
 
@@ -24,7 +25,7 @@
 
   // Key codes for the characters we may need to simulate.
   const KEY_CODES = {
-    "/": 191, ".": 190, "(": 57, ")": 48,
+    "/": 191, ".": 190, "(": 57, ")": 48, "-": 189,
   };
 
   // Typed shortcut -> id of the Hawkes keypad button it presses.
@@ -42,7 +43,23 @@
     cot: "cot",
     ln: "ln",
     log: "log",
+    theta: "symTheta",
   };
+
+  // Inverse trig shortcut -> Hawkes's "function with exponent" button. The
+  // exponent is filled with -1 to make sin⁻¹ and friends.
+  const INVERSE_TRIG = {
+    arcsin: "sinP",
+    arccos: "cosP",
+    arctan: "tanP",
+    arccsc: "cscP",
+    arcsec: "secP",
+    arccot: "cotP",
+  };
+
+  // Longest first, so "arcsin" wins over "sin" when both end at the cursor.
+  const SHORTCUT_WORDS = [...Object.keys(SHORTCUTS), ...Object.keys(INVERSE_TRIG)]
+    .sort((a, b) => b.length - a.length);
 
   let synthesizing = false;
 
@@ -217,20 +234,50 @@
     const cursor = box.selectionStart ?? box.value.length;
     if (cursor !== (box.selectionEnd ?? cursor)) return;
     const typed = box.value.slice(0, cursor) + ev.key;
-    const word = Object.keys(SHORTCUTS).find((w) => typed.endsWith(w));
+    const word = SHORTCUT_WORDS.find((w) => typed.endsWith(w));
     if (!word) return;
 
-    const button = document.getElementById(SHORTCUTS[word]);
+    const buttonId = SHORTCUTS[word] || INVERSE_TRIG[word];
+    const button = document.getElementById(buttonId);
     if (!button) {
-      log(`No keypad button "${SHORTCUTS[word]}" on this page; leaving "${word}" as typed.`);
+      log(`No keypad button "${buttonId}" on this page; leaving "${word}" as typed.`);
       return;
     }
     ev.preventDefault();
     ev.stopImmediatePropagation();
     const start = cursor - (word.length - 1);
+    const boxesBefore = new Set(allBoxes());
     setValue(box, box.value.slice(0, start) + box.value.slice(cursor), start);
     clickButton(button);
-    log(`Turned "${word}" into the ${SHORTCUTS[word]} button in`, box.id);
+    log(`Turned "${word}" into the ${buttonId} button in`, box.id);
+    if (INVERSE_TRIG[word]) finishInverse(boxesBefore);
+  }
+
+  // After a "function with exponent" button, types -1 into the exponent and
+  // puts the cursor in the function's argument. The exponent is the new box
+  // drawn highest; the argument is the lowest.
+  async function finishInverse(boxesBefore) {
+    await sleep(60);
+    const fresh = allBoxes().filter((b) => !boxesBefore.has(b));
+    if (fresh.length < 2) {
+      log("Couldn't find the exponent and argument boxes; fill in -1 yourself.");
+      return;
+    }
+    const byTop = fresh.slice().sort(
+      (a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
+    const exponent = byTop[0];
+    const argument = byTop[byTop.length - 1];
+
+    synthesizing = true;
+    try {
+      if (document.activeElement !== exponent) clickInto(exponent);
+      typeText(exponent, "-1");
+      await sleep(30);
+      clickInto(argument);
+      log("Filled exponent", exponent.id, "with -1; cursor in", argument.id);
+    } finally {
+      synthesizing = false;
+    }
   }
 
   function onKeyDown(ev) {
